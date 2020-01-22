@@ -15,12 +15,11 @@ namespace SkeppKlient
     class Client
     {
         // allt är private för att de inte används utanför denna klass
-        int port = 8080;
-        private const int bufferSize = 1024; // max data per meddelande i bytes // const för annars squiggly
-        private static readonly byte[] buffer = new byte[bufferSize];
+        readonly int port = 8080;
+        const int bufferSize = 1024; // max data per meddelande i bytes // const för annars squiggly
+        static readonly byte[] buffer = new byte[bufferSize];
         static bool isConnected = false; // blir true när man anslutit
-        static readonly Socket serverSocket = new Socket
-            (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); // deklareras här för tillgång senare, måste vara static
+        static Socket serverSocket; // deklareras här för tillgång senare, måste vara static
 
         public Client()
         {
@@ -41,8 +40,6 @@ namespace SkeppKlient
             {
                 listOfIPs.Add(matchedIPs[i].Value);
             }
-
-            Console.WriteLine(listOfIPs[0]);
 
             return listOfIPs;
         }
@@ -67,31 +64,27 @@ namespace SkeppKlient
         private void CheckConnections(List<string> ipList)
         {
             Console.WriteLine("Please wait while a server is found, this can take a moment");
-            if (!serverSocket.Connected) // man kan inte ansluta
+
+            for (int i = 0; i < ipList.Count; i++)
             {
-                for (int i = 0; i < ipList.Count; i++)
+                Console.SetCursorPosition(0, 2);
+                Console.WriteLine("Trying to connect to server {0}/{1}...\n", (i+1), ipList.Count);
+                try
                 {
-                    try
-                    {
-                        Console.WriteLine("Trying to connect to server {0}/{1}...", (i + 1), ipList.Count);
-                        serverSocket.Connect(ipList[i], port); // ansluter till serverns socket
+                    TestConnect(ipList[i], port);
 
-                        serverSocket.BeginReceive(buffer, 0, bufferSize, SocketFlags.None, ListenForData, serverSocket);
-                        Thread.Sleep(100);
-
-                        if (isConnected)
-                        {
-                            break;
-                        }
-                    }
-                    catch (SocketException ex)
+                    if (isConnected)
                     {
-                        // något gick fel
+                        break;
                     }
+                }
+                catch (SocketException ex)
+                {
+                    // något gick fel
                 }
             }
 
-            if (!serverSocket.Connected)
+            if (!isConnected)
             {
                 Console.WriteLine("No game servers found");
             }
@@ -121,6 +114,7 @@ namespace SkeppKlient
             if (message == "Welcome to battleship!")
             {
                 isConnected = true;
+                Console.Clear();
                 Console.WriteLine("Connected to server");
             }
 
@@ -155,6 +149,32 @@ namespace SkeppKlient
             // stänger ner alla klienters sockets
             socket.Shutdown(SocketShutdown.Both);
             socket.Close();
+        }
+
+        private void TestConnect(string ip, int port)
+        {
+            Socket current = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+            serverSocket = current;
+            // Connect using a timeout (5 seconds)
+
+            IAsyncResult result = serverSocket.BeginConnect(ip, port, null, null);
+
+            bool success = result.AsyncWaitHandle.WaitOne(100, true);
+
+
+            if (serverSocket.Connected)
+            {
+                serverSocket.EndConnect(result);
+                serverSocket.BeginReceive(buffer, 0, bufferSize, SocketFlags.None, ListenForData, serverSocket);
+            }
+            else
+            {
+                // NOTE, MUST CLOSE THE SOCKET
+
+                serverSocket.Close();
+                //throw new ApplicationException("Failed to connect server.");
+            }
         }
     }
 }

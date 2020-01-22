@@ -125,24 +125,5 @@ namespace SänkaSkepp
             }
             throw new Exception("No network adapters with an IPv4 address in the system!"); // om inte ipadressen hittades
         }
-
-        /*private void BroadCast()
-        {
-            UdpClient udpClient = new UdpClient();
-            udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, UDPPort));
-
-            var from = new IPEndPoint(0, 0);
-            Task.Run(() =>
-            {
-                while (true)
-                {
-                    var recvBuffer = udpClient.Receive(ref from);
-                    Console.WriteLine(Encoding.UTF8.GetString(recvBuffer));
-                }
-            });
-
-            var data = Encoding.UTF8.GetBytes("ABCD");
-            udpClient.Send(data, data.Length, "255.255.255.255", UDPPort);
-        }*/
     }
 }
