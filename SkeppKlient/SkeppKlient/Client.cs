@@ -16,6 +16,9 @@ namespace SkeppKlient
     {
         // allt är private för att de inte används utanför denna klass
         readonly int port = 8080;
+        static bool allIPsTried = false;
+        static string localIP1 = "192.168.1";
+        static string localIP2 = "10.151.";
         const int bufferSize = 1024; // max data per meddelande i bytes // const för annars squiggly
         static readonly byte[] buffer = new byte[bufferSize];
         static bool isConnected = false; // blir true när man anslutit
@@ -39,6 +42,20 @@ namespace SkeppKlient
             for (int i = 0; i < matchedIPs.Count; i++)
             {
                 listOfIPs.Add(matchedIPs[i].Value);
+            }
+            for (int i = 68; i < 73; i++)
+            {
+                for (int j = 0; j < 255; j++)
+                {
+                    //string ip1Copy = string.Format(localIP1 + "{0}.{1}", i, j);
+                    string ip2Copy = string.Format(localIP2 + "{0}.{1}", i, j);
+                    //Console.WriteLine(ip1Copy);
+                    Console.WriteLine(ip2Copy);
+                    if (listOfIPs.Contains(ip2Copy))
+                    {
+                    }
+                    else listOfIPs.Add(ip2Copy);
+                }
             }
 
             return listOfIPs;
@@ -64,11 +81,12 @@ namespace SkeppKlient
         private void CheckConnections(List<string> ipList)
         {
             Console.WriteLine("Please wait while a server is found, this can take a moment");
+            int progressBar = 0;
 
             for (int i = 0; i < ipList.Count; i++)
             {
                 Console.SetCursorPosition(0, 2);
-                Console.WriteLine("Trying to connect to server {0}/{1}...\n", (i+1), ipList.Count);
+                Console.WriteLine("Trying to connect to server {0}/{1}...\n", (i + 1), ipList.Count);
                 try
                 {
                     TestConnect(ipList[i], port);
@@ -160,7 +178,7 @@ namespace SkeppKlient
 
             IAsyncResult result = serverSocket.BeginConnect(ip, port, null, null);
 
-            bool success = result.AsyncWaitHandle.WaitOne(100, true);
+            bool success = result.AsyncWaitHandle.WaitOne(40, true);
 
 
             if (serverSocket.Connected)
